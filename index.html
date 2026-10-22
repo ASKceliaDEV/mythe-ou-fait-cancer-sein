@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mythe ou Fait ? — Octobre Rose · Club Mirai</title>
+  <meta name="description"
+    content="Mini-jeu de sensibilisation au cancer du sein proposé par le Club Mirai pour Octobre Rose. Teste tes connaissances en 12 cartes !" />
+  <meta name="theme-color" content="#FFF8F5" />
+
+  <!-- Open Graph / WhatsApp / partage -->
+  <meta property="og:title" content="Mythe ou Fait ? — Octobre Rose · Club Mirai" />
+  <meta property="og:description"
+    content="Sauras-tu distinguer les mythes des faits sur le cancer du sein ? 12 cartes, 0 tabou." />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="fr_FR" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <div class="petal-layer" aria-hidden="true">
+    <span class="petal"></span>
+    <span class="petal"></span>
+    <span class="petal"></span>
+    <span class="petal"></span>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       NAVBAR GLOBALE (fixée en haut, toujours visible)
+  ═══════════════════════════════════════ -->
+  <nav class="navbar" id="navbar" aria-label="Navigation principale">
+    <div class="nav-brand">
+      <button class="nav-logo-btn" onclick="goHome()" aria-label="Retour à l'accueil">
+        <img src="img/logo.png" alt="MIRAI x Octobre Rose" class="nav-logo-img" />
+      </button>
+      <div class="nav-title">Mythe ou Fait&nbsp;?</div>
+    </div>
+
+    <div class="desktop-nav">
+      <a href="#screen-home" class="desktop-nav-link active" id="nav-home" onclick="showScreen('screen-home'); return false;" aria-current="page">Accueil</a>
+      <a href="#screen-quiz" class="desktop-nav-link" id="nav-play" onclick="startGame(); return false;">Jeu</a>
+      <a href="#screen-advice" class="desktop-nav-link" id="nav-advice" onclick="showScreen('screen-advice'); return false;">Conseils</a>
+      <a href="#screen-about" class="desktop-nav-link" id="nav-about" onclick="showScreen('screen-about'); return false;">À propos</a>
+    </div>
+
+    <div class="nav-event" aria-hidden="true"> Octobre Rose</div>
+
+    <button class="burger-btn" id="burger-btn" onclick="toggleMenu()" aria-label="Ouvrir le menu" aria-expanded="false"
+      aria-controls="drawer" aria-haspopup="true">
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+    </button>
+  </nav>
+
+  <!-- Overlay sombre quand le drawer est ouvert -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeMenu()" aria-hidden="true"></div>
+
+  <!-- Drawer (menu latéral) -->
+  <aside class="drawer" id="drawer" aria-label="Menu" aria-hidden="true" inert>
+    <div class="drawer-header">
+      <img src="img/logo.png" alt="MIRAI x Octobre Rose" class="drawer-logo" />
+      <button class="drawer-close-btn" onclick="closeMenu()" aria-label="Fermer le menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <nav class="drawer-nav">
+      <a href="#screen-home" class="drawer-link active" id="dl-home" onclick="showScreen('screen-home'); closeMenu(); return false;" aria-current="page">
+        <span>Accueil</span>
+      </a>
+      <a href="#screen-quiz" class="drawer-link" id="dl-play" onclick="startGame(); closeMenu(); return false;">
+        <span>Jeu</span>
+      </a>
+      <a href="#screen-advice" class="drawer-link" id="dl-advice" onclick="showScreen('screen-advice'); closeMenu(); return false;">
+        <span>Conseils</span>
+      </a>
+      <a href="#screen-about" class="drawer-link" id="dl-about" onclick="showScreen('screen-about'); closeMenu(); return false;">
+        <span>À propos</span>
+      </a>
+    </nav>
+
+    <div class="drawer-footer">
+      <p class="drawer-footer-event">Octobre Rose </p>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 4 — À PROPOS (section dédiée)
+  ═══════════════════════════════════════ -->
+
+  <!-- ÉCRAN 1 — ACCUEIL -->
+  <section id="screen-home" class="screen active" aria-label="Accueil" aria-hidden="false">
+    <div class="home-bg-blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
+    <div class="home-content">
+      <div class="logo-wrap">
+        <img src="img/logo.png" alt="Logo MIRAIxOctobreRose" class="logo" id="home-logo" />
+      </div>
+
+      <h1 class="home-title">
+        <span class="word-mythe">Mythe</span>
+        <span class="word-ou">ou</span>
+        <span class="word-fait">Fait&nbsp;?</span>
+      </h1>
+
+      <p class="home-subtitle">
+        12 affirmations sur le cancer du sein.<br />
+        Sauras-tu faire la différence ?
+      </p>
+
+      <div class="home-stats">
+        <div class="stat">
+          <span class="stat-number">12</span>
+          <span class="stat-label">cartes</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat">
+          <span class="stat-number">~3</span>
+          <span class="stat-label">minutes</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">bienveillant</span>
+        </div>
+      </div>
+
+      <button id="btn-start" class="btn-primary" onclick="startGame()">
+        <span>Jouer maintenant</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+
+    </div>
+  </section>
+
+  <!-- ÉCRAN CONSEILS -->
+  <section id="screen-advice" class="screen" aria-label="Conseils" aria-hidden="true">
+    <div class="home-bg-blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
+    <div class="advice-content">
+      <button class="about-back-btn" onclick="goHome()" aria-label="Retour à l'accueil">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        <span>Retour</span>
+      </button>
+
+      <header class="advice-header">
+        <span class="advice-ribbon" aria-hidden="true">🎀</span>
+        <h1 class="about-screen-title">Conseils &amp; prévention</h1>
+        <p>Des repères fiables pour prendre soin de sa santé, sans remplacer un avis médical.</p>
+      </header>
+
+      <article class="advice-card">
+        <h2>Connaître les signes à surveiller</h2>
+        <p>Une boule ou un épaississement, une modification de la forme ou de la peau du sein, un changement du mamelon ou un écoulement inhabituel peuvent justifier un avis médical. Ces signes ont souvent une autre cause qu'un cancer, mais seul un professionnel de santé peut les évaluer.</p>
+      </article>
+
+      <article class="advice-card">
+        <h2>En cas de changement, consultez</h2>
+        <p>N'attendez pas l'apparition d'une douleur pour en parler à un médecin ou à une sage-femme. Le jeu ne permet pas de poser un diagnostic et ne remplace ni une consultation ni un examen médical.</p>
+      </article>
+
+      <article class="advice-card">
+        <h2>Informez-vous sur le dépistage</h2>
+        <p>Les recommandations dépendent notamment de l'âge, des antécédents et du pays. Demandez à un professionnel de santé quel suivi vous correspond ; un suivi spécifique peut être indiqué en cas de risque élevé.</p>
+      </article>
+
+      <article class="advice-card">
+        <h2>Agir pour sa santé</h2>
+        <p>Limiter l'alcool, éviter le tabac, pratiquer une activité physique régulière et maintenir un poids favorable à sa santé peuvent contribuer à réduire certains risques. Aucun mode de vie ne garantit toutefois d'éviter un cancer.</p>
+      </article>
+
+      <div class="advice-sources">
+        <h2>Sources fiables pour aller plus loin</h2>
+        <ul>
+          <li><a href="https://www.who.int/news-room/fact-sheets/detail/breast-cancer" target="_blank" rel="noopener noreferrer">Organisation mondiale de la Santé — Cancer du sein</a></li>
+          <li><a href="https://www.cancer.gov/types/breast/causes-risk-factors/benign-breast-lumps" target="_blank" rel="noopener noreferrer">National Cancer Institute — Boules bénignes et changements du sein</a></li>
+        </ul>
+      </div>
+
+      <p class="advice-disclaimer">Informations générales de sensibilisation : pour une question personnelle ou un symptôme, adressez-vous à un professionnel de santé.</p>
+    </div>
+  </section>
+
+
+  <!-- ÉCRAN 2 — QUIZ -->
+  <section id="screen-quiz" class="screen" aria-label="Quiz" aria-live="polite" aria-hidden="true">
+
+    <header class="quiz-header">
+      <div class="quiz-logo-small">
+        <img src="img/logo.png" alt="Logo Mirai" />
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-bar"></div>
+        </div>
+        <span class="progress-label" id="progress-label">1 / 12</span>
+      </div>
+      <div class="score-display" id="score-display" aria-label="Score actuel">0 ✓</div>
+    </header>
+
+    <div class="card-stage" id="card-stage" aria-label="Carte en cours">
+      <div class="card" id="card-front">
+        <div class="card-inner">
+          <div class="card-face card-question">
+            <div class="card-number" id="card-number" aria-hidden="true">01</div>
+            <p class="card-statement" id="card-statement"></p>
+            <div class="card-hint" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              Tape une réponse ci-dessous
+            </div>
+          </div>
+          <div class="card-face card-reveal" id="card-reveal" aria-hidden="true">
+            <div class="reveal-verdict" id="reveal-verdict"></div>
+            <p class="reveal-explanation" id="reveal-explanation"></p>
+            <p class="reveal-source" id="reveal-source"></p>
+          </div>
+        </div>
+      </div>
+      <div class="card card-ghost" aria-hidden="true"></div>
+    </div>
+
+    <div class="answer-feedback" id="answer-feedback" aria-hidden="true">
+      <span id="feedback-text"></span>
+    </div>
+
+    <div class="answer-buttons" id="answer-buttons">
+      <button id="btn-myth" class="btn-answer btn-myth" onclick="submitAnswer('myth')" aria-label="Mythe">
+        <span class="btn-answer-icon" aria-hidden="true">❌</span>
+        <span>Mythe</span>
+      </button>
+      <button id="btn-fact" class="btn-answer btn-fact" onclick="submitAnswer('fact')" aria-label="Fait">
+        <span class="btn-answer-icon" aria-hidden="true">✅</span>
+        <span>Fait</span>
+      </button>
+    </div>
+
+    <div class="next-wrap" id="next-wrap">
+      <button id="btn-next" class="btn-next" onclick="nextCard()">
+        <span id="btn-next-label">Question suivante</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </div>
+
+  </section>
+
+
+  <!-- ÉCRAN 3 — RÉSULTATS -->
+  <section id="screen-result" class="screen" aria-label="Résultats" aria-hidden="true">
+    <div class="home-bg-blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
+    <div class="result-content">
+      <div class="result-logo">
+        <img src="img/logo.png" alt="Logo Mirai" />
+      </div>
+
+      <div class="result-score-ring" id="result-ring" aria-label="Score final">
+        <svg class="ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="52" />
+          <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52" stroke-dasharray="327"
+            stroke-dashoffset="327" />
+        </svg>
+        <div class="ring-text">
+          <span class="ring-score" id="ring-score">0</span>
+          <span class="ring-total" id="ring-total">/12</span>
+        </div>
+      </div>
+
+      <h2 class="result-title" id="result-title">Bravo !</h2>
+      <p class="result-message" id="result-message"></p>
+
+      <div class="result-breakdown" id="result-breakdown">
+        <div class="breakdown-item breakdown-correct">
+          <span class="breakdown-icon" aria-hidden="true">✅</span>
+          <span class="breakdown-count" id="bd-correct">0</span>
+          <span class="breakdown-label">bonnes réponses</span>
+        </div>
+        <div class="breakdown-item breakdown-wrong">
+          <span class="breakdown-icon" aria-hidden="true">❌</span>
+          <span class="breakdown-count" id="bd-wrong">0</span>
+          <span class="breakdown-label">à retenir</span>
+        </div>
+      </div>
+
+      <div class="result-cta-block">
+        <p class="result-cta-text">
+          🎀 Passe le mot — la sensibilisation sauve des vies !
+        </p>
+      </div>
+
+      <button class="btn-primary btn-restart" onclick="restartGame()">
+        <span>Rejouer</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
+        </svg>
+      </button>
+
+    </div>
+  </section>
+
+
+  <!-- ÉCRAN 4 — À PROPOS -->
+  <section id="screen-about" class="screen" aria-label="À propos" aria-hidden="true">
+    <div class="home-bg-blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
+    <div class="about-screen-content">
+
+      <!-- Bouton retour -->
+      <button class="about-back-btn" onclick="goHome()" aria-label="Retour à l'accueil">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        <span>Retour</span>
+      </button>
+
+      <!-- En-tête -->
+      <div class="about-screen-header">
+        <img src="img/logo.png" alt="MIRAI x Octobre Rose" class="about-screen-logo" />
+        <h1 class="about-screen-title">À propos du jeu</h1>
+        <p class="about-screen-badge">
+          <span aria-hidden="true">🎀</span> Octobre Rose 
+        </p>
+      </div>
+
+      <!-- Description -->
+      <div class="about-card">
+        <p class="about-card-text">
+          <strong>Mythe ou Fait ?</strong> est un mini-jeu de sensibilisation au cancer du sein,
+          conçu par le <strong>Club Mirai</strong> de l'UMMTO pour l'événement
+          Octobre Rose du <strong>27 octobre 2025</strong>.
+        </p>
+        <p class="about-card-text">
+          12 affirmations sourcées auprès d'organisations de santé reconnues —
+          pour démystifier les idées reçues et encourager le dépistage.
+        </p>
+      </div>
+
+      <!-- Chiffres clés -->
+      <div class="about-stats-row">
+        <div class="about-stat">
+          <span class="about-stat-num">12</span>
+          <span class="about-stat-lbl">cartes</span>
+        </div>
+        <div class="about-stat">
+          <span class="about-stat-num">7</span>
+          <span class="about-stat-lbl">mythes</span>
+        </div>
+        <div class="about-stat">
+          <span class="about-stat-num">5</span>
+          <span class="about-stat-lbl">faits</span>
+        </div>
+      </div>
+
+      <!-- Ressources et accompagnement -->
+      <section class="about-resources-section" aria-labelledby="about-resources-title">
+        <h2 class="about-resources-title" id="about-resources-title">Où trouver de l’aide</h2>
+        <p class="about-resources-lead">Vous n’êtes pas seule : voici vers qui vous tourner pour être informée et accompagnée.</p>
+
+        <div class="about-resources-grid">
+          <article class="about-resource-card">
+            <span class="about-resource-icon" aria-hidden="true">🩺</span>
+            <h3>Votre médecin ou sage-femme</h3>
+            <p>C’est le premier contact pour un examen des seins, une prescription de mammographie ou une orientation vers un spécialiste.</p>
+          </article>
+
+          <article class="about-resource-card">
+            <span class="about-resource-icon" aria-hidden="true">🏥</span>
+            <h3>Centres de dépistage</h3>
+            <p>Hôpitaux, cliniques et centres de radiologie proposent mammographie et échographie. Renseignez-vous auprès de votre médecin sur les structures proches de chez vous.</p>
+          </article>
+
+          <article class="about-resource-card">
+            <span class="about-resource-icon" aria-hidden="true">🤝</span>
+            <h3>Associations de patientes</h3>
+            <p>Elles offrent écoute, groupes de parole et conseils pratiques pendant et après les traitements. Demandez à votre équipe soignante les associations actives près de chez vous.</p>
+          </article>
+
+          <article class="about-resource-card">
+            <span class="about-resource-icon" aria-hidden="true">📚</span>
+            <h3>Sites de référence</h3>
+            <ul>
+              <li><a href="https://www.who.int/fr" target="_blank" rel="noopener noreferrer">Organisation mondiale de la Santé</a></li>
+              <li><a href="https://www.cancer.fr" target="_blank" rel="noopener noreferrer">Institut national du cancer (France)</a></li>
+            </ul>
+          </article>
+        </div>
+
+        <p class="about-resources-note">Ce site est informatif et ne remplace pas l’avis d’un professionnel de santé. En cas de doute, consultez.</p>
+      </section>
+
+      <!-- Appel à l'action -->
+      <button class="btn-primary about-play-btn" onclick="startGame()">
+        <span>Jouer maintenant</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <span>Proposé par le <strong>Club Mirai</strong> · UMMTO</span>
+    <span class="site-footer-disclaimer">Jeu éducatif · Pour tout symptôme, consultez un professionnel de santé.</span>
+  </footer>
+
+  <script src="dataset.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
