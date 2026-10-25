@@ -406,40 +406,50 @@ body {
 /* ── CARD STAGE ── */
 .card-stage {
   position: relative;
+  isolation: isolate;
   width: 100%;
   max-width: 380px;
-  margin: 8px auto 0;
-  padding: 0 20px;
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  margin: 18px auto 0;   /* un peu de place au-dessus pour la carte rose */
+  padding: 0 20px;       /* plus de padding-bottom */
+  flex: 0 0 auto;
+  display: block;
 }
-
 .card {
   width: 100%;
-  min-height: 300px;
+  min-height: 260px;
   border-radius: var(--radius-card);
   background: linear-gradient(160deg, rgba(107, 33, 212, .25) 0%, rgba(45, 18, 105, .35) 100%);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(20px);
   box-shadow: var(--shadow-card);
   position: relative;
+  z-index: 1;
   transition: transform var(--transition), box-shadow var(--transition);
   perspective: 1000px;
 }
-
-.card-ghost {
+.card-stage .card-ghost {
   position: absolute;
-  top: 10px;
-  left: 28px;
-  right: auto;
-  bottom: -10px;
-  width: calc(100% - 56px);
-  border-radius: var(--radius-card);
-  background: linear-gradient(160deg, rgba(107, 33, 212, .12) 0%, rgba(45, 18, 105, .18) 100%);
-  border: 1px solid rgba(255, 255, 255, .06);
-  z-index: -1;
+  top: -10px;            /* dépasse de 10px en haut seulement */
+  bottom: 12px;          /* reste cachée derrière la carte blanche */
+  left: 32px;
+  right: 32px;           /* 12px plus étroite de chaque côté */
+  width: auto;
+  height: auto;
+  min-height: 0;
+  z-index: 0;
+  backdrop-filter: none;
+  perspective: none;
+  transition: none;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .54), rgba(248, 215, 227, .7));
+  border: 1px solid rgba(255, 255, 255, .58);
+  box-shadow: none;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
 }
 
 /* Card flip animation */
