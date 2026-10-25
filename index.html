@@ -95,6 +95,9 @@
       <a href="#screen-about" class="drawer-link" id="dl-about" onclick="showScreen('screen-about'); closeMenu(); return false;">
         <span>À propos</span>
       </a>
+      <a href="#screen-garden" class="drawer-link" id="dl-garden" onclick="openGarden(); closeMenu(); return false;">
+        <span>Messages Positifs</span>
+      </a>
     </nav>
 
     <div class="drawer-footer">
@@ -106,6 +109,7 @@
        ÉCRAN 4 — À PROPOS (section dédiée)
   ═══════════════════════════════════════ -->
 
+  <main id="main-content">
   <!-- ÉCRAN 1 — ACCUEIL -->
   <section id="screen-home" class="screen active" aria-label="Accueil" aria-hidden="false">
     <div class="home-bg-blobs" aria-hidden="true">
@@ -158,6 +162,8 @@
       <button class="btn-secondary" onclick="openGarden()">
         <span aria-hidden="true">🌸</span>
         <span>Planter un message positif</span>
+        <span aria-hidden="true">🌸</span>
+
       </button>
 
     </div>
@@ -200,11 +206,27 @@
 
     <div class="garden-wrap">
       <div id="garden-bubble" class="garden-bubble" role="status" aria-live="polite"></div>
-      <div id="garden" aria-label="Jardin des messages positifs">
-        <p id="garden-empty" class="garden-empty">Le jardin est vide. Plante la première fleur !</p>
-        <div id="garden-track"></div>
+      <div id="garden-viewport" class="garden-viewport" role="region" aria-label="Jardin des messages positifs">
+        <div id="garden-world" class="garden-world">
+          <div id="garden-track" class="garden-track"></div>
+        </div>
+        <p id="garden-empty" class="garden-empty">Plante la première fleur du jardin 🌸</p>
+        <span class="garden-edge garden-edge-left" aria-hidden="true"></span>
+        <span class="garden-edge garden-edge-right" aria-hidden="true"></span>
+      </div>
+      <div class="garden-controls">
+        <button id="garden-scroll-left" class="garden-arrow" type="button" aria-label="Défiler vers la gauche">‹</button>
+        <div class="garden-position">
+          <span id="garden-count">0 fleurs</span>
+          <div class="garden-progress" role="progressbar" aria-label="Position dans le jardin" aria-valuemin="0"
+            aria-valuemax="100" aria-valuenow="0">
+            <span id="garden-progress-fill"></span>
+          </div>
+        </div>
+        <button id="garden-scroll-right" class="garden-arrow" type="button" aria-label="Défiler vers la droite">›</button>
       </div>
     </div>
+    <button id="garden-all-button" class="garden-all-button" type="button" hidden></button>
   </section>
 
   <!-- ÉCRAN CONSEILS -->
@@ -495,6 +517,7 @@
 
     </div>
   </section>
+  </main>
   <footer class="site-footer">
     <div class="footer-content">
       <div class="footer-brand">
@@ -506,6 +529,16 @@
     </div>
   </footer>
 
+  <dialog id="garden-modal" class="garden-modal" aria-labelledby="garden-modal-title">
+    <div class="garden-modal-header">
+      <h2 id="garden-modal-title">Tous les messages du jardin</h2>
+      <button id="garden-modal-close" class="garden-modal-close" type="button" aria-label="Fermer">×</button>
+    </div>
+    <label class="garden-search-label" for="garden-search">Rechercher un prénom ou un message</label>
+    <input id="garden-search" class="garden-search" type="search" autocomplete="off" />
+    <p id="garden-modal-count" class="garden-modal-count" aria-live="polite"></p>
+    <ul id="garden-message-list" class="garden-message-list"></ul>
+  </dialog>
 
   <script src="dataset.js"></script>
   <script src="app.js"></script>

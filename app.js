@@ -29,7 +29,11 @@ function showScreen(id) {
     throw new Error(`Écran introuvable : ${id}`);
   }
 
+  if (document.body.classList.contains('garden-active') && id !== 'screen-garden') {
+    window.scrollTo(0, 0);
+  }
   document.body.classList.toggle('quiz-active', id === 'screen-quiz');
+  document.body.classList.toggle('garden-active', id === 'screen-garden');
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.screen').forEach(s => s.setAttribute('aria-hidden', 'true'));
   updateNavigation(id);
@@ -48,9 +52,10 @@ function updateNavigation(screenId) {
       : screenId === 'screen-home' ? 'home'
         : screenId === 'screen-advice' ? 'advice'
           : screenId === 'screen-about' ? 'about'
-            : null;
+            : screenId === 'screen-garden' ? 'garden'
+              : null;
 
-  ['home', 'play', 'advice', 'about'].forEach(id => {
+  ['home', 'play', 'advice', 'about', 'garden'].forEach(id => {
     const desktopLink = document.getElementById(`nav-${id}`);
     const drawerLink = document.getElementById(`dl-${id}`);
     [desktopLink, drawerLink].forEach(link => {
@@ -388,6 +393,12 @@ document.addEventListener('keydown', function(e) {
 // ── JARDIN DES MESSAGES POSITIFS ──────────────────────────
 
 (function initGarden() {
+  // Réglages des rangées, tailles, virtualisation et plafond d'affichage.
+  const NB_ROWS = 4;
+  const FLOWER_SIZES = [28, 36, 46, 56];
+  const MOBILE_FLOWER_SIZES = [24, 34, 44];
+  const MAX_FLOWERS = 300;
+  const BUFFER_SCREENS = 1;
   const KEY = 'mirai-garden-v1';
   const PALETTES = [
     ['#E8509A', '#FFC2DA'], ['#C93580', '#F8D7E3'], ['#F78FB8', '#FFE3EE'],
@@ -401,17 +412,72 @@ document.addEventListener('keydown', function(e) {
   const empty = document.getElementById('garden-empty');
   const bubble = document.getElementById('garden-bubble');
   const thanks = document.getElementById('garden-thanks');
+  const viewport = document.getElementById('garden-viewport');
+  const world = document.getElementById('garden-world');
+  const count = document.getElementById('garden-count');
+  const progress = document.querySelector('.garden-progress');
+  const progressFill = document.getElementById('garden-progress-fill');
+  const leftButton = document.getElementById('garden-scroll-left');
+  const rightButton = document.getElementById('garden-scroll-right');
+  const allButton = document.getElementById('garden-all-button');
+  const modal = document.getElementById('garden-modal');
+  const modalClose = document.getElementById('garden-modal-close');
+  const searchInput = document.getElementById('garden-search');
+  const modalCount = document.getElementById('garden-modal-count');
+  const messageList = document.getElementById('garden-message-list');
 
-  if (!form || !nameInput || !msgInput || !track || !empty || !bubble || !thanks) {
+  if (!form || !nameInput || !msgInput || !track || !empty || !bubble || !thanks
+      || !viewport || !world || !count || !progress || !progressFill
+      || !leftButton || !rightButton || !allButton || !modal || !modalClose
+      || !searchInput || !modalCount || !messageList) {
     throw new Error('Éléments du jardin introuvables dans la page.');
   }
 
+  const mobileQuery = window.matchMedia('(max-width: 639px)');
+  let items = [];
+  let layout = [];
+  let rowCount = NB_ROWS;
+  let flowerGap = 70;
   let bubbleTimer;
   let thanksTimer;
+  let inertiaFrame;
+  let suppressNextClick = false;
+  let pendingFlowerIndex = null;
+  const renderedFlowers = new Map();
 
   function setStatus(message, isError = false) {
     thanks.textContent = message;
     thanks.classList.toggle('is-error', isError);
+  }
+
+  function hashString(value) {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index++) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function getFlowerId(item, index) {
+    return typeof item.id === 'string' && item.id
+      ? item.id
+      : `legacy-${hashString(`${item.name}\u0000${item.msg}`)}-${index}`;
+  }
+
+  function getRowCount() {
+    return mobileQuery.matches ? 3 : NB_ROWS;
+  }
+
+  function readFlowerGap() {
+    const value = Number.parseFloat(
+      window.getComputedStyle(document.documentElement).getPropertyValue('--flower-gap')
+    );
+    return Number.isFinite(value) && value > 0 ? value : 70;
+  }
+
+  function getFlowerSize(row) {
+    return (mobileQuery.matches ? MOBILE_FLOWER_SIZES : FLOWER_SIZES)[row];
   }
 
   function drawFlower(canvas, seed) {
@@ -470,68 +536,196 @@ document.addEventListener('keydown', function(e) {
 
     if (!stored) return [];
 
-    let items;
+    let records;
     try {
-      items = JSON.parse(stored);
+      records = JSON.parse(stored);
     } catch (error) {
       throw new Error('Les messages du jardin enregistrés dans ce navigateur sont illisibles.');
     }
-    if (!Array.isArray(items)) {
+    if (!Array.isArray(records)) {
       throw new Error('Les données enregistrées pour le jardin ne sont pas valides.');
     }
 
-    return items.filter(item =>
-      item
-      && typeof item.name === 'string'
-      && typeof item.msg === 'string'
-      && Number.isInteger(item.seed)
-      && item.seed >= 0
-      && item.seed < PALETTES.length
-    );
+    return records.reduce((validItems, item, index) => {
+      if (!item
+          || typeof item.name !== 'string'
+          || typeof item.msg !== 'string'
+          || !Number.isInteger(item.seed)
+          || item.seed < 0
+          || item.seed >= PALETTES.length) {
+        return validItems;
+      }
+      validItems.push({ ...item, id: getFlowerId(item, index) });
+      return validItems;
+    }, []);
   }
 
-  function saveGarden(items) {
+  function saveGarden(records) {
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(items));
+      window.localStorage.setItem(KEY, JSON.stringify(records));
     } catch (error) {
       throw new Error('Impossible d’enregistrer le message. Vérifie l’espace disponible dans ton navigateur.');
     }
   }
 
-  function addFlower(item, animate) {
-    empty.style.display = 'none';
+  function createFlower(item, index) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'garden-plant' + (animate ? ' grow' : '');
+    button.className = 'garden-plant';
     button.setAttribute('aria-label', `Message de ${item.name}`);
+    button.dataset.flowerIndex = String(index);
 
-    const label = document.createElement('div');
+    const label = document.createElement('span');
     label.className = 'garden-name';
     label.textContent = item.name;
 
     const canvas = document.createElement('canvas');
     drawFlower(canvas, item.seed);
-
     button.append(label, canvas);
     button.addEventListener('click', event => {
       event.stopPropagation();
+      if (suppressNextClick) {
+        suppressNextClick = false;
+        return;
+      }
+      if (bubble.dataset.flowerIndex === String(index) && bubble.style.display === 'block') {
+        bubble.style.display = 'none';
+        return;
+      }
       bubble.replaceChildren();
       const author = document.createElement('b');
       author.textContent = item.name;
       bubble.append(author, document.createTextNode(item.msg));
+      bubble.dataset.flowerIndex = String(index);
       bubble.style.display = 'block';
       clearTimeout(bubbleTimer);
       bubbleTimer = setTimeout(() => {
         bubble.style.display = 'none';
       }, 6000);
     });
-    track.appendChild(button);
+    return button;
+  }
 
-    if (animate) button.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  function calculateLayout() {
+    rowCount = getRowCount();
+    flowerGap = readFlowerGap();
+    const rowPositions = Math.ceil(items.length / rowCount);
+    world.style.width = `${Math.max(viewport.clientWidth, rowPositions * flowerGap + flowerGap)}px`;
+
+    const firstIndex = Math.max(0, items.length - MAX_FLOWERS);
+    layout = [];
+    for (let index = firstIndex; index < items.length; index++) {
+      const item = items[index];
+      const row = index % rowCount;
+      const stableHash = hashString(`${item.id}\u0000${item.name}`);
+      const jitter = ((stableHash % 10001) / 10000 - 0.5) * flowerGap * 0.24;
+      const bottomJitter = (((stableHash >>> 8) % 1001) / 1000 - 0.5) * 4;
+      const stagger = row * flowerGap / 2;
+      const x = Math.max(0, Math.floor(index / rowCount) * flowerGap + stagger + jitter);
+      const bottoms = rowCount === 3 ? [44, 23, 4] : [55, 38, 20, 4];
+      layout.push({
+        index,
+        row,
+        x,
+        bottom: bottoms[row] + bottomJitter,
+        size: getFlowerSize(row),
+        hash: stableHash
+      });
+    }
+  }
+
+  function createFlowerNode(entry) {
+    const flower = createFlower(items[entry.index], entry.index);
+    flower.style.left = `${entry.x}px`;
+    flower.style.bottom = `${entry.bottom}%`;
+    flower.style.zIndex = String(entry.row + 1);
+    flower.style.setProperty('--flower-size', `${entry.size}px`);
+    flower.style.setProperty('--sway-delay', `-${entry.hash % 3000}ms`);
+    flower.classList.add(`garden-row-${entry.row}`);
+    track.appendChild(flower);
+    renderedFlowers.set(entry.index, flower);
+    return flower;
+  }
+
+  function renderVisibleFlowers() {
+    const firstX = Math.max(0, viewport.scrollLeft - viewport.clientWidth * BUFFER_SCREENS);
+    const lastX = viewport.scrollLeft + viewport.clientWidth * (1 + BUFFER_SCREENS);
+    const visibleIndices = new Set();
+
+    layout.forEach(entry => {
+      if (entry.x + entry.size < firstX || entry.x > lastX) return;
+      visibleIndices.add(entry.index);
+      const flower = renderedFlowers.get(entry.index) || createFlowerNode(entry);
+      flower.style.left = `${entry.x}px`;
+      flower.style.bottom = `${entry.bottom}%`;
+      flower.style.zIndex = String(entry.row + 1);
+      flower.style.setProperty('--flower-size', `${entry.size}px`);
+      flower.classList.remove('garden-row-0', 'garden-row-1', 'garden-row-2', 'garden-row-3');
+      flower.classList.add(`garden-row-${entry.row}`);
+      if (entry.index === pendingFlowerIndex) {
+        pendingFlowerIndex = null;
+        flower.classList.add('grow', 'new-flower-halo');
+        setTimeout(() => flower.classList.remove('grow', 'new-flower-halo'), 1600);
+      }
+    });
+
+    renderedFlowers.forEach((flower, index) => {
+      if (visibleIndices.has(index)) return;
+      flower.remove();
+      renderedFlowers.delete(index);
+    });
+  }
+
+  function updateScrollIndicators() {
+    const maximum = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    const current = Math.min(maximum, Math.max(0, viewport.scrollLeft));
+    const percent = maximum ? (current / maximum) * 100 : 100;
+    viewport.classList.toggle('can-scroll-left', current > 2);
+    viewport.classList.toggle('can-scroll-right', current < maximum - 2);
+    leftButton.disabled = current <= 2;
+    rightButton.disabled = current >= maximum - 2;
+    progressFill.style.width = `${percent}%`;
+    progress.setAttribute('aria-valuenow', String(Math.round(percent)));
+    count.textContent = `${renderedFlowers.size} / ${items.length} fleurs`;
+    allButton.hidden = items.length <= MAX_FLOWERS;
+    allButton.textContent = `Voir tous les messages (${items.length})`;
+  }
+
+  function refreshGarden() {
+    calculateLayout();
+    empty.hidden = items.length > 0;
+    renderVisibleFlowers();
+    updateScrollIndicators();
+  }
+
+  function showAllMessages() {
+    const query = searchInput.value.trim().toLocaleLowerCase();
+    const filtered = query
+      ? items.filter(item =>
+        item.name.toLocaleLowerCase().includes(query)
+        || item.msg.toLocaleLowerCase().includes(query))
+      : items;
+    const fragment = document.createDocumentFragment();
+    [...filtered].reverse().forEach(item => {
+      const entry = document.createElement('li');
+      const author = document.createElement('strong');
+      const message = document.createElement('p');
+      author.textContent = item.name;
+      message.textContent = item.msg;
+      entry.append(author, message);
+      fragment.appendChild(entry);
+    });
+    messageList.replaceChildren(fragment);
+    modalCount.textContent = `${filtered.length} message${filtered.length === 1 ? '' : 's'}`;
   }
 
   try {
-    readGarden().forEach(item => addFlower(item, false));
+    items = readGarden();
+    refreshGarden();
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = viewport.scrollWidth;
+      refreshGarden();
+    });
   } catch (error) {
     setStatus(error.message, true);
     empty.textContent = 'Impossible de charger les fleurs enregistrées.';
@@ -547,29 +741,143 @@ document.addEventListener('keydown', function(e) {
     }
 
     const item = {
+      id: window.crypto && typeof window.crypto.randomUUID === 'function'
+        ? window.crypto.randomUUID()
+        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
       name,
       msg: message,
       seed: Math.floor(Math.random() * PALETTES.length)
     };
 
     try {
-      const items = readGarden();
-      items.push(item);
-      saveGarden(items);
+      const nextItems = readGarden();
+      nextItems.push(item);
+      saveGarden(nextItems);
+      items = nextItems;
     } catch (error) {
       setStatus(error.message, true);
       return;
     }
 
     form.reset();
-    addFlower(item, true);
+    const newIndex = items.length - 1;
+    pendingFlowerIndex = newIndex;
+    refreshGarden();
+    const newFlower = layout.find(entry => entry.index === newIndex);
+    if (newFlower) {
+      viewport.scrollTo({
+        left: Math.max(0, newFlower.x - viewport.clientWidth / 2),
+        behavior: 'smooth'
+      });
+    }
     setStatus('Merci ! Ta fleur est plantée 🌸');
     clearTimeout(thanksTimer);
     thanksTimer = setTimeout(() => setStatus(''), 4000);
   });
 
-  document.addEventListener('click', () => {
+  document.addEventListener('click', event => {
+    if (event.target.closest('.garden-plant, .garden-bubble')) return;
     bubble.style.display = 'none';
+  });
+
+  viewport.addEventListener('scroll', () => {
+    renderVisibleFlowers();
+    updateScrollIndicators();
+  }, { passive: true });
+
+  leftButton.addEventListener('click', () => {
+    viewport.scrollBy({ left: -viewport.clientWidth * 0.8, behavior: 'smooth' });
+  });
+  rightButton.addEventListener('click', () => {
+    viewport.scrollBy({ left: viewport.clientWidth * 0.8, behavior: 'smooth' });
+  });
+
+  viewport.addEventListener('wheel', event => {
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    event.preventDefault();
+    viewport.scrollLeft += event.deltaY;
+  }, { passive: false });
+
+  let pointerStartX = 0;
+  let previousPointerX = 0;
+  let pointerVelocity = 0;
+  let pointerMoved = false;
+
+  viewport.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return;
+    cancelAnimationFrame(inertiaFrame);
+    pointerStartX = event.clientX;
+    previousPointerX = event.clientX;
+    pointerVelocity = 0;
+    pointerMoved = false;
+    viewport.classList.add('is-dragging');
+  });
+
+  viewport.addEventListener('pointermove', event => {
+    if (!viewport.classList.contains('is-dragging')) return;
+    const delta = event.clientX - previousPointerX;
+    if (!pointerMoved && Math.abs(event.clientX - pointerStartX) <= 5) {
+      previousPointerX = event.clientX;
+      return;
+    }
+    if (!pointerMoved) {
+      pointerMoved = true;
+      viewport.setPointerCapture(event.pointerId);
+    }
+    viewport.scrollLeft -= delta;
+    pointerVelocity = delta;
+    previousPointerX = event.clientX;
+  });
+
+  function stopDragging(event) {
+    if (!viewport.classList.contains('is-dragging')) return;
+    viewport.classList.remove('is-dragging');
+    if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+    if (pointerMoved) suppressNextClick = true;
+
+    let velocity = -pointerVelocity * 0.35;
+    function coast() {
+      if (Math.abs(velocity) < 0.5) return;
+      viewport.scrollLeft += velocity;
+      velocity *= 0.92;
+      inertiaFrame = requestAnimationFrame(coast);
+    }
+    inertiaFrame = requestAnimationFrame(coast);
+    setTimeout(() => {
+      suppressNextClick = false;
+    }, 250);
+  }
+
+  viewport.addEventListener('pointerup', stopDragging);
+  viewport.addEventListener('pointercancel', stopDragging);
+  window.addEventListener('pointerup', stopDragging);
+  window.addEventListener('pointercancel', stopDragging);
+
+  function handleResize() {
+    const wasAtEnd = Math.abs(viewport.scrollWidth - viewport.clientWidth - viewport.scrollLeft) < 4;
+    refreshGarden();
+    if (wasAtEnd) viewport.scrollLeft = viewport.scrollWidth;
+  }
+
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(handleResize).observe(viewport);
+  } else {
+    window.addEventListener('resize', handleResize);
+  }
+  mobileQuery.addEventListener('change', handleResize);
+
+  allButton.addEventListener('click', () => {
+    searchInput.value = '';
+    showAllMessages();
+    modal.showModal();
+  });
+  modalClose.addEventListener('click', () => modal.close());
+  searchInput.addEventListener('input', showAllMessages);
+  modal.addEventListener('click', event => {
+    if (event.target === modal) modal.close();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') bubble.style.display = 'none';
   });
 
   window.openGarden = function() {
