@@ -36,6 +36,9 @@ function showScreen(id) {
     throw new Error(`Écran introuvable : ${id}`);
   }
 
+  const gardenBubble = document.getElementById('garden-bubble');
+  if (gardenBubble) gardenBubble.style.display = 'none';
+
   if (document.body.classList.contains('garden-active') && id !== 'screen-garden') {
     window.scrollTo(0, 0);
   }
@@ -560,6 +563,7 @@ document.addEventListener('keydown', function(e) {
       return;
     }
     const wasAtEnd = Math.abs(viewport.scrollWidth - viewport.clientWidth - viewport.scrollLeft) < 4;
+    bubble.style.display = 'none';
     track.replaceChildren();
     renderedFlowers.clear();
     items = next;
@@ -577,6 +581,25 @@ document.addEventListener('keydown', function(e) {
     } catch (error) {
       // silencieux : on garde les fleurs déjà affichées
     }
+  }
+
+  function positionBubble(flowerButton) {
+    const rect = flowerButton.getBoundingClientRect();
+    const bubbleWidth = bubble.offsetWidth;
+    const bubbleHeight = bubble.offsetHeight;
+    const margin = 8;
+    const left = Math.max(
+      margin,
+      Math.min(window.innerWidth - bubbleWidth - margin, rect.left + (rect.width - bubbleWidth) / 2)
+    );
+    const navbar = document.querySelector('.navbar');
+    const navbarBottom = navbar ? navbar.getBoundingClientRect().bottom : 0;
+    let top = rect.top - bubbleHeight - margin;
+
+    if (top < navbarBottom || top < margin) top = rect.bottom + margin;
+
+    bubble.style.left = `${left}px`;
+    bubble.style.top = `${top}px`;
   }
 
   function createFlower(item, index) {
@@ -609,6 +632,7 @@ document.addEventListener('keydown', function(e) {
       bubble.append(author, document.createTextNode(item.msg));
       bubble.dataset.flowerIndex = String(index);
       bubble.style.display = 'block';
+      positionBubble(button);
       clearTimeout(bubbleTimer);
       bubbleTimer = setTimeout(() => {
         bubble.style.display = 'none';
@@ -682,6 +706,9 @@ document.addEventListener('keydown', function(e) {
 
     renderedFlowers.forEach((flower, index) => {
       if (visibleIndices.has(index)) return;
+      if (bubble.style.display === 'block' && bubble.dataset.flowerIndex === String(index)) {
+        bubble.style.display = 'none';
+      }
       flower.remove();
       renderedFlowers.delete(index);
     });
@@ -818,9 +845,16 @@ document.addEventListener('keydown', function(e) {
   });
 
   viewport.addEventListener('scroll', () => {
+    bubble.style.display = 'none';
     renderVisibleFlowers();
     updateScrollIndicators();
   }, { passive: true });
+  window.addEventListener('scroll', () => {
+    bubble.style.display = 'none';
+  }, { passive: true });
+  window.addEventListener('resize', () => {
+    bubble.style.display = 'none';
+  });
 
   leftButton.addEventListener('click', () => {
     viewport.scrollBy({ left: -viewport.clientWidth * 0.8, behavior: 'smooth' });
