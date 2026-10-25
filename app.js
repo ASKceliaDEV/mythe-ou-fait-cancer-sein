@@ -384,3 +384,196 @@ document.addEventListener('keydown', function(e) {
     closeMenu();
   }
 });
+
+// ── JARDIN DES MESSAGES POSITIFS ──────────────────────────
+
+(function initGarden() {
+  const KEY = 'mirai-garden-v1';
+  const PALETTES = [
+    ['#E8509A', '#FFC2DA'], ['#C93580', '#F8D7E3'], ['#F78FB8', '#FFE3EE'],
+    ['#B04A9A', '#F1CBE8'], ['#FF6F9F', '#FFD6E4'], ['#9C2F6E', '#F2C4D8']
+  ];
+
+  const form = document.getElementById('garden-form');
+  const nameInput = document.getElementById('garden-name');
+  const msgInput = document.getElementById('garden-msg');
+  const track = document.getElementById('garden-track');
+  const empty = document.getElementById('garden-empty');
+  const bubble = document.getElementById('garden-bubble');
+  const thanks = document.getElementById('garden-thanks');
+
+  if (!form || !nameInput || !msgInput || !track || !empty || !bubble || !thanks) {
+    throw new Error('Éléments du jardin introuvables dans la page.');
+  }
+
+  let bubbleTimer;
+  let thanksTimer;
+
+  function setStatus(message, isError = false) {
+    thanks.textContent = message;
+    thanks.classList.toggle('is-error', isError);
+  }
+
+  function drawFlower(canvas, seed) {
+    canvas.width = 16;
+    canvas.height = 24;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Le dessin des fleurs n’est pas pris en charge par ce navigateur.');
+
+    const [petal, light] = PALETTES[seed % PALETTES.length];
+    const pixel = (x, y, color) => {
+      context.fillStyle = color;
+      context.fillRect(x, y, 1, 1);
+    };
+
+    for (let y = 11; y < 24; y++) {
+      pixel(8, y, '#2F7A3A');
+      pixel(7, y, '#4C9A4F');
+    }
+    [[5, 19], [4, 18], [3, 17], [6, 20], [10, 21], [11, 20], [12, 19], [9, 22]]
+      .forEach(([x, y]) => pixel(x, y, '#7FCB6A'));
+    [[5, 20], [4, 19], [10, 22], [11, 21]]
+      .forEach(([x, y]) => pixel(x, y, '#58A94D'));
+    [[6, 15], [5, 14], [5, 16], [10, 15], [11, 14], [11, 16], [7, 15], [8, 15], [9, 15]]
+      .forEach(([x, y]) => pixel(x, y, '#E8509A'));
+    pixel(8, 15, '#A8246B');
+
+    const centerX = 7.5;
+    const centerY = 5.5;
+    for (let k = 0; k < 5; k++) {
+      const angle = -Math.PI / 2 + k * 2 * Math.PI / 5;
+      const petalX = centerX + Math.cos(angle) * 3.3;
+      const petalY = centerY + Math.sin(angle) * 3.3;
+      for (let y = 0; y < 12; y++) {
+        for (let x = 0; x < 16; x++) {
+          const distance = Math.hypot(x - petalX, y - petalY);
+          if (distance <= 2.6) pixel(x, y, distance <= 1.3 ? light : petal);
+        }
+      }
+    }
+
+    for (let y = 0; y < 12; y++) {
+      for (let x = 0; x < 16; x++) {
+        const distance = Math.hypot(x - centerX, y - centerY);
+        if (distance <= 1.9) pixel(x, y, distance <= 1 ? '#C98A1E' : '#F5C04A');
+      }
+    }
+  }
+
+  function readGarden() {
+    let stored;
+    try {
+      stored = window.localStorage.getItem(KEY);
+    } catch (error) {
+      throw new Error('Le stockage local est inaccessible. Vérifie les paramètres de ton navigateur.');
+    }
+
+    if (!stored) return [];
+
+    let items;
+    try {
+      items = JSON.parse(stored);
+    } catch (error) {
+      throw new Error('Les messages du jardin enregistrés dans ce navigateur sont illisibles.');
+    }
+    if (!Array.isArray(items)) {
+      throw new Error('Les données enregistrées pour le jardin ne sont pas valides.');
+    }
+
+    return items.filter(item =>
+      item
+      && typeof item.name === 'string'
+      && typeof item.msg === 'string'
+      && Number.isInteger(item.seed)
+      && item.seed >= 0
+      && item.seed < PALETTES.length
+    );
+  }
+
+  function saveGarden(items) {
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(items));
+    } catch (error) {
+      throw new Error('Impossible d’enregistrer le message. Vérifie l’espace disponible dans ton navigateur.');
+    }
+  }
+
+  function addFlower(item, animate) {
+    empty.style.display = 'none';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'garden-plant' + (animate ? ' grow' : '');
+    button.setAttribute('aria-label', `Message de ${item.name}`);
+
+    const label = document.createElement('div');
+    label.className = 'garden-name';
+    label.textContent = item.name;
+
+    const canvas = document.createElement('canvas');
+    drawFlower(canvas, item.seed);
+
+    button.append(label, canvas);
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      bubble.replaceChildren();
+      const author = document.createElement('b');
+      author.textContent = item.name;
+      bubble.append(author, document.createTextNode(item.msg));
+      bubble.style.display = 'block';
+      clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => {
+        bubble.style.display = 'none';
+      }, 6000);
+    });
+    track.appendChild(button);
+
+    if (animate) button.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  try {
+    readGarden().forEach(item => addFlower(item, false));
+  } catch (error) {
+    setStatus(error.message, true);
+    empty.textContent = 'Impossible de charger les fleurs enregistrées.';
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const name = nameInput.value.trim();
+    const message = msgInput.value.trim();
+    if (!name || !message) {
+      setStatus('Ajoute ton prénom et un message positif.', true);
+      return;
+    }
+
+    const item = {
+      name,
+      msg: message,
+      seed: Math.floor(Math.random() * PALETTES.length)
+    };
+
+    try {
+      const items = readGarden();
+      items.push(item);
+      saveGarden(items);
+    } catch (error) {
+      setStatus(error.message, true);
+      return;
+    }
+
+    form.reset();
+    addFlower(item, true);
+    setStatus('Merci ! Ta fleur est plantée 🌸');
+    clearTimeout(thanksTimer);
+    thanksTimer = setTimeout(() => setStatus(''), 4000);
+  });
+
+  document.addEventListener('click', () => {
+    bubble.style.display = 'none';
+  });
+
+  window.openGarden = function() {
+    showScreen('screen-garden');
+    setTimeout(() => nameInput.focus({ preventScroll: true }), 450);
+  };
+})();

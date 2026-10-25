@@ -50,9 +50,13 @@
       <a href="#screen-quiz" class="desktop-nav-link" id="nav-play" onclick="startGame(); return false;">Jeu</a>
       <a href="#screen-advice" class="desktop-nav-link" id="nav-advice" onclick="showScreen('screen-advice'); return false;">Conseils</a>
       <a href="#screen-about" class="desktop-nav-link" id="nav-about" onclick="showScreen('screen-about'); return false;">À propos</a>
+      <a href="#screen-garden" class="desktop-nav-link" id="nav-garden" onclick="openGarden(); return false;">Messages Positifs</a>
     </div>
 
-    <div class="nav-event" aria-hidden="true"> Octobre Rose</div>
+    <div class="octobre-badge" aria-label="Octobre Rose">
+      <span class="badge-ribbon" aria-hidden="true">🎗️</span>
+      <span class="badge-text">OCTOBRE ROSE</span>
+    </div>
 
     <button class="burger-btn" id="burger-btn" onclick="toggleMenu()" aria-label="Ouvrir le menu" aria-expanded="false"
       aria-controls="drawer" aria-haspopup="true">
@@ -94,7 +98,7 @@
     </nav>
 
     <div class="drawer-footer">
-      <p class="drawer-footer-event">Octobre Rose </p>
+      <p class="drawer-footer-event">🎗️ Octobre Rose </p>
     </div>
   </aside>
 
@@ -151,6 +155,55 @@
         </svg>
       </button>
 
+      <button class="btn-secondary" onclick="openGarden()">
+        <span aria-hidden="true">🌸</span>
+        <span>Planter un message positif</span>
+      </button>
+
+    </div>
+  </section>
+
+  <!-- ÉCRAN JARDIN DES MESSAGES POSITIFS -->
+  <section id="screen-garden" class="screen" aria-label="Jardin des messages positifs" aria-hidden="true">
+    <div class="home-bg-blobs" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
+    <div class="garden-content">
+      <button class="about-back-btn" onclick="goHome()" aria-label="Retour à l'accueil">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        <span>Retour</span>
+      </button>
+
+      <header class="garden-header">
+        <h1 class="about-screen-title">Un mot gentil, une fleur</h1>
+        <p>Écris un message positif : il deviendra une fleur dans notre jardin.</p>
+      </header>
+
+      <form id="garden-form" class="garden-form" autocomplete="off">
+        <label for="garden-name">Ton prénom</label>
+        <input id="garden-name" type="text" maxlength="16" required />
+
+        <label for="garden-msg">Ton message positif</label>
+        <textarea id="garden-msg" maxlength="200" required></textarea>
+
+        <button type="submit" class="btn-primary"><span>Planter ma fleur</span></button>
+        <p id="garden-thanks" class="garden-thanks" role="status" aria-live="polite"></p>
+        <p class="garden-storage-note">Les messages sont enregistrés uniquement dans ce navigateur.</p>
+      </form>
+    </div>
+
+    <div class="garden-wrap">
+      <div id="garden-bubble" class="garden-bubble" role="status" aria-live="polite"></div>
+      <div id="garden" aria-label="Jardin des messages positifs">
+        <p id="garden-empty" class="garden-empty">Le jardin est vide. Plante la première fleur !</p>
+        <div id="garden-track"></div>
+      </div>
     </div>
   </section>
 
@@ -442,11 +495,17 @@
 
     </div>
   </section>
-
   <footer class="site-footer">
-    <span>Proposé par le <strong>Club Mirai</strong> · UMMTO</span>
-    <span class="site-footer-disclaimer">Jeu éducatif · Pour tout symptôme, consultez un professionnel de santé.</span>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <span>Proposé par le <strong>Club Mirai</strong> -UMMTO</span>
+      </div>
+      <p class="site-footer-disclaimer">
+        Pour tout symptôme ou question médicale, consultez un professionnel de santé.
+      </p>
+    </div>
   </footer>
+
 
   <script src="dataset.js"></script>
   <script src="app.js"></script>
