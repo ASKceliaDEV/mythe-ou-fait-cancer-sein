@@ -6,6 +6,7 @@
 'use strict';
 
 // ── STATE ──────────────────────────────────────────────────
+const GAME_CARD_COUNT = 12;
 let deck = [];          // cartes mélangées
 let currentIndex = 0;  // index actif
 let score = 0;         // bonnes réponses
@@ -13,13 +14,19 @@ let answered = false;  // carte courante déjà répondue ?
 
 // ── HELPERS ────────────────────────────────────────────────
 
-/** Mélange un tableau en place (Fisher-Yates) */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
+/** Mélange une copie d'un tableau avec Fisher-Yates. */
+function shuffle(array) {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-  return arr;
+  return copy;
+}
+
+/** Sélectionne n cartes dans un paquet mélangé, sans modifier l'original. */
+function pickCards(all, n = GAME_CARD_COUNT) {
+  return shuffle(all).slice(0, Math.max(0, Math.floor(n)));
 }
 
 /** Affiche un écran, cache les autres */
@@ -74,7 +81,7 @@ const pad = n => String(n).padStart(2, '0');
 // ── JEU — INITIALISATION ───────────────────────────────────
 
 function startGame() {
-  deck = shuffle([...CARDS]);
+  deck = pickCards(CARDS, GAME_CARD_COUNT);
   currentIndex = 0;
   score = 0;
   answered = false;

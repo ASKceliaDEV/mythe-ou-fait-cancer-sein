@@ -1,6 +1,6 @@
 /* ============================================================
    Mythe ou Fact ? — Octobre Rose
-   Dataset des 12 cartes (7 mythes, 5 facts)
+   Dataset des 32 cartes du jeu
 
    Champs :
    - id          : numéro unique
