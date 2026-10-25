@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
       .filter((k) => !process.env[k]);
     if (missing.length) {
       console.error('Variables manquantes :', missing.join(', '));
-      return res.status(500).json({ error: 'Variables manquantes', missing });
+      return res.status(500).json({ error: 'Erreur serveur' });
     }
 
     const { createClient } = require('@supabase/supabase-js');
@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
 
       if (error) {
         console.error('Supabase GET :', error);
-        return res.status(500).json({ error: 'Erreur Supabase', detail: error.message });
+        return res.status(500).json({ error: 'Erreur serveur' });
       }
       res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
       return res.status(200).json(data);
@@ -77,7 +77,7 @@ module.exports = async (req, res) => {
 
       if (error) {
         console.error('Supabase INSERT :', error);
-        return res.status(500).json({ error: 'Erreur Supabase', detail: error.message });
+        return res.status(500).json({ error: 'Erreur serveur' });
       }
       return res.status(201).json(data);
     }
@@ -86,6 +86,6 @@ module.exports = async (req, res) => {
     return res.status(405).end();
   } catch (err) {
     console.error('Erreur API garden-messages :', err);
-    return res.status(500).json({ error: 'Erreur serveur', detail: String((err && err.message) || err) });
+    return res.status(500).json({ error: 'Erreur serveur' });
   }
 };

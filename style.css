@@ -2215,6 +2215,16 @@ main {
   font-size: 1rem;
 }
 
+.garden-form .garden-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+}
+
 .garden-form textarea {
   min-height: 90px;
   margin-bottom: 4px;

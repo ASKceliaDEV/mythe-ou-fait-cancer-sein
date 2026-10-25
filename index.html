@@ -193,14 +193,17 @@
 
       <form id="garden-form" class="garden-form" autocomplete="off">
         <label for="garden-name">Ton prénom</label>
-        <input id="garden-name" type="text" maxlength="16" required />
+        <input id="garden-name" type="text" maxlength="20" required />
+
+        <input id="garden-website" class="garden-honeypot" name="website" type="text"
+          tabindex="-1" autocomplete="off" aria-hidden="true" />
 
         <label for="garden-msg">Ton message positif</label>
         <textarea id="garden-msg" maxlength="200" required></textarea>
 
         <button type="submit" class="btn-primary"><span>Planter ma fleur</span></button>
         <p id="garden-thanks" class="garden-thanks" role="status" aria-live="polite"></p>
-        <p class="garden-storage-note">Les messages sont enregistrés uniquement dans ce navigateur.</p>
+        <p class="garden-storage-note">Les messages sont partagés avec tous les visiteurs du jardin.</p>
       </form>
     </div>
 

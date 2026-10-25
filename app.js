@@ -406,7 +406,6 @@ document.addEventListener('keydown', function(e) {
   const MOBILE_FLOWER_SIZES = [24, 34, 44];
   const MAX_FLOWERS = 300;
   const BUFFER_SCREENS = 1;
-  const KEY = 'mirai-garden-v1';
   const PALETTES = [
     ['#E8509A', '#FFC2DA'], ['#C93580', '#F8D7E3'], ['#F78FB8', '#FFE3EE'],
     ['#B04A9A', '#F1CBE8'], ['#FF6F9F', '#FFD6E4'], ['#9C2F6E', '#F2C4D8']
@@ -415,6 +414,8 @@ document.addEventListener('keydown', function(e) {
   const form = document.getElementById('garden-form');
   const nameInput = document.getElementById('garden-name');
   const msgInput = document.getElementById('garden-msg');
+  const gardenScreen = document.getElementById('screen-garden');
+  const websiteInput = document.getElementById('garden-website');
   const track = document.getElementById('garden-track');
   const empty = document.getElementById('garden-empty');
   const bubble = document.getElementById('garden-bubble');
@@ -433,7 +434,8 @@ document.addEventListener('keydown', function(e) {
   const modalCount = document.getElementById('garden-modal-count');
   const messageList = document.getElementById('garden-message-list');
 
-  if (!form || !nameInput || !msgInput || !track || !empty || !bubble || !thanks
+  if (!form || !nameInput || !msgInput || !gardenScreen || !websiteInput
+      || !track || !empty || !bubble || !thanks
       || !viewport || !world || !count || !progress || !progressFill
       || !leftButton || !rightButton || !allButton || !modal || !modalClose
       || !searchInput || !modalCount || !messageList) {
@@ -464,12 +466,6 @@ document.addEventListener('keydown', function(e) {
       hash = Math.imul(hash, 16777619);
     }
     return hash >>> 0;
-  }
-
-  function getFlowerId(item, index) {
-    return typeof item.id === 'string' && item.id
-      ? item.id
-      : `legacy-${hashString(`${item.name}\u0000${item.msg}`)}-${index}`;
   }
 
   function getRowCount() {
@@ -533,45 +529,53 @@ document.addEventListener('keydown', function(e) {
     }
   }
 
-  function readGarden() {
-    let stored;
-    try {
-      stored = window.localStorage.getItem(KEY);
-    } catch (error) {
-      throw new Error('Le stockage local est inaccessible. Vérifie les paramètres de ton navigateur.');
-    }
+  // ── Connexion à l'API (remplace le localStorage) ──
+  const API_URL = '/api/garden-messages';
+  const SYNC_INTERVAL = 30000;      // rafraîchit le jardin toutes les 30 s
+  let sending = false;
+  let ignoreSyncUntil = 0;
 
-    if (!stored) return [];
-
-    let records;
-    try {
-      records = JSON.parse(stored);
-    } catch (error) {
-      throw new Error('Les messages du jardin enregistrés dans ce navigateur sont illisibles.');
-    }
-    if (!Array.isArray(records)) {
-      throw new Error('Les données enregistrées pour le jardin ne sont pas valides.');
-    }
-
-    return records.reduce((validItems, item, index) => {
-      if (!item
-          || typeof item.name !== 'string'
-          || typeof item.msg !== 'string'
-          || !Number.isInteger(item.seed)
-          || item.seed < 0
-          || item.seed >= PALETTES.length) {
-        return validItems;
-      }
-      validItems.push({ ...item, id: getFlowerId(item, index) });
-      return validItems;
-    }, []);
+  // La couleur de la fleur est dérivée de l'id : identique pour tous les visiteurs
+  function seedFromId(id) {
+    return hashString(String(id)) % PALETTES.length;
   }
 
-  function saveGarden(records) {
+  function fromApi(row) {
+    return { id: row.id, name: row.first_name, msg: row.message, seed: seedFromId(row.id) };
+  }
+
+  // L'API renvoie les plus récents d'abord : on inverse (ancien → récent)
+  async function fetchMessages() {
+    const response = await fetch(API_URL, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error('Impossible de charger les fleurs pour le moment.');
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error('Réponse inattendue du serveur.');
+    return rows.map(fromApi).reverse();
+  }
+
+  function applyItems(next) {
+    const same = next.length === items.length && next.every((item, i) => item.id === items[i].id);
+    if (same) {
+      empty.textContent = 'Plante la première fleur du jardin 🌸';
+      return;
+    }
+    const wasAtEnd = Math.abs(viewport.scrollWidth - viewport.clientWidth - viewport.scrollLeft) < 4;
+    track.replaceChildren();
+    renderedFlowers.clear();
+    items = next;
+    empty.textContent = 'Plante la première fleur du jardin 🌸';
+    refreshGarden();
+    if (wasAtEnd) viewport.scrollLeft = viewport.scrollWidth;
+  }
+
+  async function syncGarden() {
+    if (Date.now() < ignoreSyncUntil) return;
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(records));
+      const next = await fetchMessages();
+      if (Date.now() < ignoreSyncUntil) return;
+      applyItems(next);
     } catch (error) {
-      throw new Error('Impossible d’enregistrer le message. Vérifie l’espace disponible dans ton navigateur.');
+      // silencieux : on garde les fleurs déjà affichées
     }
   }
 
@@ -726,20 +730,32 @@ document.addEventListener('keydown', function(e) {
     modalCount.textContent = `${filtered.length} message${filtered.length === 1 ? '' : 's'}`;
   }
 
-  try {
-    items = readGarden();
+  async function initialLoad() {
     refreshGarden();
-    requestAnimationFrame(() => {
-      viewport.scrollLeft = viewport.scrollWidth;
+    try {
+      items = await fetchMessages();
       refreshGarden();
-    });
-  } catch (error) {
-    setStatus(error.message, true);
-    empty.textContent = 'Impossible de charger les fleurs enregistrées.';
+      requestAnimationFrame(() => {
+        viewport.scrollLeft = viewport.scrollWidth;
+        refreshGarden();
+      });
+    } catch (error) {
+      setStatus(error.message, true);
+      empty.textContent = 'Impossible de charger les fleurs pour le moment.';
+    }
   }
 
-  form.addEventListener('submit', event => {
+  initialLoad();
+  window.setInterval(() => {
+    if (!document.hidden && gardenScreen.classList.contains('active')) syncGarden();
+  }, SYNC_INTERVAL);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && gardenScreen.classList.contains('active')) syncGarden();
+  });
+
+  form.addEventListener('submit', async event => {
     event.preventDefault();
+    if (sending) return;
     const name = nameInput.value.trim();
     const message = msgInput.value.trim();
     if (!name || !message) {
@@ -747,39 +763,53 @@ document.addEventListener('keydown', function(e) {
       return;
     }
 
-    const item = {
-      id: window.crypto && typeof window.crypto.randomUUID === 'function'
-        ? window.crypto.randomUUID()
-        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
-      name,
-      msg: message,
-      seed: Math.floor(Math.random() * PALETTES.length)
-    };
-
+    sending = true;
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
     try {
-      const nextItems = readGarden();
-      nextItems.push(item);
-      saveGarden(nextItems);
-      items = nextItems;
-    } catch (error) {
-      setStatus(error.message, true);
-      return;
-    }
-
-    form.reset();
-    const newIndex = items.length - 1;
-    pendingFlowerIndex = newIndex;
-    refreshGarden();
-    const newFlower = layout.find(entry => entry.index === newIndex);
-    if (newFlower) {
-      viewport.scrollTo({
-        left: Math.max(0, newFlower.x - viewport.clientWidth / 2),
-        behavior: 'smooth'
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firstName: name,
+          message,
+          website: websiteInput.value
+        })
       });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Impossible de planter ta fleur. Réessaie.');
+      }
+      if (!result.id) throw new Error('Impossible de planter ta fleur. Réessaie.');
+
+      const item = fromApi(result);
+      items = items.filter(existing => existing.id !== item.id);
+      items.push(item);
+      ignoreSyncUntil = Date.now() + SYNC_INTERVAL;
+      const newIndex = items.length - 1;
+      pendingFlowerIndex = newIndex;
+      refreshGarden();
+      const newFlower = layout.find(entry => entry.index === newIndex);
+      if (newFlower) {
+        viewport.scrollTo({
+          left: Math.max(0, newFlower.x - viewport.clientWidth / 2),
+          behavior: 'smooth'
+        });
+      }
+
+      form.reset();
+      setStatus('Merci ! Ta fleur est plantée 🌸');
+      clearTimeout(thanksTimer);
+      thanksTimer = setTimeout(() => setStatus(''), 4000);
+    } catch (error) {
+      setStatus(error.message || 'Impossible de planter ta fleur pour le moment.', true);
+    } finally {
+      sending = false;
+      if (submitButton) submitButton.disabled = false;
     }
-    setStatus('Merci ! Ta fleur est plantée 🌸');
-    clearTimeout(thanksTimer);
-    thanksTimer = setTimeout(() => setStatus(''), 4000);
   });
 
   document.addEventListener('click', event => {
@@ -889,6 +919,7 @@ document.addEventListener('keydown', function(e) {
 
   window.openGarden = function() {
     showScreen('screen-garden');
+    syncGarden();
     setTimeout(() => nameInput.focus({ preventScroll: true }), 450);
   };
 })();
