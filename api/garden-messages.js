@@ -59,14 +59,14 @@ module.exports = async (req, res) => {
         .update(ip + process.env.IP_SALT)
         .digest('hex');
 
-      const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const since = new Date(Date.now() - 1 * 60 * 1000).toISOString();
       const { count } = await supabase
         .from('messages')
         .select('id', { count: 'exact', head: true })
         .eq('ip_hash', ipHash)
         .gte('created_at', since);
 
-      if ((count || 0) >= 3)
+      if ((count || 0) >= 20)
         return res.status(429).json({ error: 'Trop de messages, réessaie dans quelques minutes.' });
 
       const { data, error } = await supabase
